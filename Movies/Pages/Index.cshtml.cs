@@ -9,10 +9,14 @@ namespace Movies.Pages
 {
     public class IndexModel : PageModel
     {
-        public List<Movie> Movies;
+        public IEnumerable<Movie> Movies;
+
 
         [BindProperty]
         public string search { get; set; }
+
+        [BindProperty]
+        public string sort { get; set; }
 
         [BindProperty]
         public List<string> mpaa { get; set; } = new List<string>();
@@ -27,7 +31,7 @@ namespace Movies.Pages
 
         public void OnGet()
         {
-            Movies = MovieDatabase.All;
+            Movies = MovieDatabase.All.OrderBy(movie => movie.Title);
         }
 
         public void OnPost()
@@ -36,20 +40,51 @@ namespace Movies.Pages
 
             if (search != null)
             {
-                Movies = MovieDatabase.Search(Movies, search);
+                Movies = Movies.Where(movie => movie.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || movie.Director != null && movie.Director.Contains(search, StringComparison.OrdinalIgnoreCase));
+                //Movies = MovieDatabase.Search(Movies, search);
             }
 
             if(mpaa.Count != 0)
             {
-                Movies = MovieDatabase.FilterByMPAA(Movies, mpaa);
+                Movies = Movies.Where(movie => mpaa.Contains(movie.MPAA_Rating));
+                //Movies = MovieDatabase.FilterByMPAA(Movies, mpaa);
             }
 
             if(minIMDB != null)
             {
-                Movies = MovieDatabase.FilterByMinIMDB(Movies, (float)minIMDB);
+                Movies = Movies.Where(movie => movie.IMDB_Rating != null && movie.IMDB_Rating >= minIMDB);
+                //Movies = MovieDatabase.FilterByMinIMDB(Movies, (float)minIMDB);
             }
-
-            
+            if (maxIMDB != null)
+            {
+                Movies = Movies.Where(movie => movie.IMDB_Rating != null && movie.IMDB_Rating <= maxIMDB);
+                //Movies = MovieDatabase.FilterByMinIMDB(Movies, (float)minIMDB);
+            }
+            if (sort != null)
+            {
+                if (sort == "title")
+                {
+                    Movies = MovieDatabase.All.OrderBy(movie => movie.Title);
+                }
+                else if (sort == "director")
+                {
+                    //string parts[] = movie.Director.Split(" ");
+                    Movies = MovieDatabase.All.OrderBy(movie => movie.Director);
+                }
+                else if (sort == "year")
+                {
+                    Movies = MovieDatabase.All.OrderBy(movie => movie.Release_Year);
+                }
+                else if (sort == "imdb")
+                {
+                    Movies = MovieDatabase.All.OrderBy(movie => movie.IMDB_Rating);
+                }
+                else if (sort == "rt")
+                {
+                    Movies = MovieDatabase.All.OrderBy(movie => movie.Rotten_Tomatoes_Rating);
+                }
+                //Movies = MovieDatabase.FilterByMinIMDB(Movies, (float)minIMDB);
+            }
         }
     }
 }
